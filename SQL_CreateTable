@@ -1,0 +1,91 @@
+-- CSC1034 Countdown Game Database
+-- Table Creation Script
+-- Student: [YOUR_STUDENT_NUMBER]
+-- Date: August 2025
+
+-- Drop existing tables if they exist (for clean installation)
+DROP TABLE IF EXISTS leaderboard;
+DROP TABLE IF EXISTS words;
+DROP TABLE IF EXISTS letters;
+DROP TABLE IF EXISTS games;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS users;
+
+-- 1. USERS Table - Stores player account information
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. SETTINGS Table - Stores user preferences and configuration
+CREATE TABLE settings (
+    setting_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    volume INT DEFAULT 50,
+    font_size INT DEFAULT 16,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 3. GAMES Table - Records each game session with timing and scoring
+CREATE TABLE games (
+    game_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP NULL,
+    score INT DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- 4. LETTERS Table - Stores the letters drawn for each game session
+CREATE TABLE letters (
+    letter_id INT AUTO_INCREMENT PRIMARY KEY,
+    game_id INT NOT NULL,
+    letter CHAR(1) NOT NULL,
+    letter_order INT NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
+);
+
+-- 5. WORDS Table - Records all words submitted by players during games
+CREATE TABLE words (
+    word_id INT AUTO_INCREMENT PRIMARY KEY,
+    game_id INT NOT NULL,
+    word VARCHAR(50) NOT NULL,
+    is_valid BOOLEAN DEFAULT TRUE,
+    length INT NOT NULL,
+    points_earned INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
+);
+
+-- 6. LEADERBOARD Table - Maintains aggregate statistics for each player
+CREATE TABLE leaderboard (
+    leaderboard_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNIQUE NOT NULL,
+    best_score INT DEFAULT 0,
+    total_games INT DEFAULT 0,
+    average_score DECIMAL(5,2) DEFAULT 0.00,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Performance Indexes for better query performance
+CREATE INDEX idx_games_user_id ON games(user_id);
+CREATE INDEX idx_games_score ON games(score DESC);
+CREATE INDEX idx_games_start_time ON games(start_time);
+CREATE INDEX idx_letters_game_id ON letters(game_id);
+CREATE INDEX idx_letters_order ON letters(game_id, letter_order);
+CREATE INDEX idx_words_game_id ON words(game_id);
+CREATE INDEX idx_words_valid ON words(is_valid);
+CREATE INDEX idx_words_length ON words(length DESC);
+CREATE INDEX idx_leaderboard_score ON leaderboard(best_score DESC);
+CREATE INDEX idx_leaderboard_games ON leaderboard(total_games DESC);
+
+-- Insert initial system message
+INSERT INTO users (username, password_hash) VALUES 
+('system', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+
+-- Display success message
+SELECT 'Database tables created successfully!' as Status;
